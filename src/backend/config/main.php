@@ -1,7 +1,7 @@
 <?php
 $params = array_merge(
     require __DIR__ . '/../../common/config/params.php',
-    require __DIR__ . '/../../common/config/params-local.php',
+    require __DIR__ . '/../../common/config/local/params-local.php',
     require __DIR__ . '/params.php',
     require __DIR__ . '/params-local.php'
 );
@@ -31,6 +31,21 @@ return [
                 [
                     'class' => 'yii\log\FileTarget',
                     'levels' => ['error', 'warning'],
+                ],
+                [
+                    'class' => \mitrm\logstash\LogstashTarget::class,
+                    'levels' => ['info', 'error', 'warning'],
+                    'logVars' => ['_GET', '_POST', '_SESSION', '_SERVER'],
+                    'clientOptions' => [
+                        'release' => 'backend_app',
+                    ],
+                    'isLogUser' => true, // Добавить в лог ID пользователя
+                    'isLogContext' => false,
+                    'extraCallback' => function ($message, $extra) {
+                        $extra['app_id'] = Yii::$app->id;
+                        return $extra;
+                    },
+                    'except' => ['order'],
                 ],
             ],
         ],

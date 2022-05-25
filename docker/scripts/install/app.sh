@@ -10,3 +10,4 @@ echo ">>> Start nginx background service"
 
 echo ">>> Start main php-fpm service"
 php-fpm --allow-to-run-as-root
+systemctl enable filebeat

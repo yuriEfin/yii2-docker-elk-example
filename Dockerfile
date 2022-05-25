@@ -1,7 +1,7 @@
-FROM php:8.1-fpm
+FROM php:7.4-fpm
 
 # CONFIGURE
-RUN apt-get update && apt-get -y dist-upgrade && \
+RUN apt-get update && \
     apt-get install --fix-missing -y  \
                 memcached  \
                 zip \
@@ -30,8 +30,16 @@ RUN apt-get update && apt-get -y dist-upgrade && \
                 cron \
                 git \
                 nginx \
+                gnupg \
                 libzip-dev \
-                g++
+                g++ \
+                ca-certificates \
+                lsb-release \
+                software-properties-common
+
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv D27D666CD88E42B4
+RUN echo "deb http://artifacts.elastic.co/packages/oss-8.x/apt stable main" | tee -a /etc/apt/sources.list.d/elastic-8.x.list
+RUN apt-get update && apt-get install apt-transport-https  filebeat
 
 RUN docker-php-ext-configure \
     gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/
@@ -67,6 +75,12 @@ RUN pecl install channel://pecl.php.net/igbinary \
 RUN docker-php-ext-enable igbinary imagick memcached msgpack redis
 
 RUN sed -i 's/# \(ru_RU.UTF-8 UTF-8\)/\1/g' /etc/locale.gen && locale-gen && update-locale "ru_RU.UTF-8"
+RUN export LC_CTYPE=en_US.UTF-8
+RUN export LC_ALL=en_US.UTF-8
+RUN locale-gen
+
+COPY ./docker/filebeat/filebeat.yml /etc/filebeat/
+RUN chmod go-w /etc/filebeat/filebeat.yml
 
 COPY ./docker/scripts/install/app.sh /usr/bin/app
 RUN chmod +x /usr/bin/app
@@ -99,11 +113,16 @@ RUN composer config -g github-oauth.github.com 2c2d128d2ef8204efa6513dc48319a4e2
 
 COPY ./src/composer.json $APP_PATH
 
+RUN pecl install xdebug-2.9.8 && docker-php-ext-enable xdebug
+
 COPY ./src /src
 
 WORKDIR /src
 
-RUN useradd -ms /bin/bash yii_docker
-USER yii_docker
+RUN chmod -R 0777 /src/frontend/web/assets
+RUN chmod -R 0777 /src/backend/web/assets
+RUN service filebeat restart
+#RUN useradd -ms /bin/bash yii_docker
+#USER yii_docker
 
 CMD ["app"]
