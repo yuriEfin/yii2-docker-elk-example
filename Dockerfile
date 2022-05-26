@@ -37,6 +37,8 @@ RUN apt-get update && \
                 lsb-release \
                 software-properties-common
 
+RUN docker-php-ext-install sockets
+
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv D27D666CD88E42B4
 RUN echo "deb http://artifacts.elastic.co/packages/oss-8.x/apt stable main" | tee -a /etc/apt/sources.list.d/elastic-8.x.list
 RUN apt-get update && apt-get install apt-transport-https  filebeat
@@ -65,6 +67,9 @@ RUN docker-php-ext-install -j$(nproc) bz2 \
                                       zip \
                                       bcmath \
                                       intl || echo "Rm failed"
+
+RUN docker-php-ext-configure sockets
+
 RUN pecl install channel://pecl.php.net/igbinary \
                  imagick \
                  memcached \
