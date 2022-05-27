@@ -1,9 +1,19 @@
 <?php
 
+use common\components\rabbitmq\consumer\YourConsumer;
+
 return [
     'aliases'    => [
         '@bower' => '@vendor/bower-asset',
         '@npm'   => '@vendor/npm-asset',
+    ],
+    'container' => [
+        'definitions' => [
+            'rabbit_mq.consumer.default' => YourConsumer::class,
+        ],
+        'singletons' => [
+        
+        ],
     ],
     'vendorPath' => dirname(dirname(__DIR__)) . '/vendor',
     'components' => [

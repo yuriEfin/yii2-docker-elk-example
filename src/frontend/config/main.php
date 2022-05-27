@@ -42,6 +42,11 @@ return [
                     'isLogContext' => false,
                     'extraCallback' => function ($message, $extra) {
                         $extra['app_id'] = Yii::$app->id;
+                        $extra['GET'] = json_encode($_GET);
+                        $extra['POST'] = json_encode($_POST);
+                        $extra['COOKIE'] = json_encode($_COOKIE);
+                        $extra['SESSION'] = json_encode($_SESSION);
+                        $extra['SERVER'] = json_encode($_SERVER);
                         return $extra;
                     },
                     'except' => ['order'],

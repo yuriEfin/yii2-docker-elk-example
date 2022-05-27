@@ -37,16 +37,11 @@ RUN apt-get update && \
                 lsb-release \
                 software-properties-common
 
-RUN docker-php-ext-install sockets
-
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv D27D666CD88E42B4
-RUN echo "deb http://artifacts.elastic.co/packages/oss-8.x/apt stable main" | tee -a /etc/apt/sources.list.d/elastic-8.x.list
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv D27D666CD88E42B4 && \
+echo "deb http://artifacts.elastic.co/packages/oss-8.x/apt stable main" | tee -a /etc/apt/sources.list.d/elastic-8.x.list
 RUN apt-get update && apt-get install apt-transport-https  filebeat
 
-RUN docker-php-ext-configure \
-    gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/
-RUN docker-php-ext-configure \
-    intl
+RUN docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/
 
 RUN docker-php-ext-install -j$(nproc) bz2 \
                                       calendar \
@@ -62,13 +57,12 @@ RUN docker-php-ext-install -j$(nproc) bz2 \
                                       sysvmsg \
                                       sysvsem \
                                       sysvshm \
-                                      wddx \
                                       xsl \
                                       zip \
                                       bcmath \
-                                      intl || echo "Rm failed"
+                                      intl
 
-RUN docker-php-ext-configure sockets
+RUN docker-php-ext-configure intl && docker-php-ext-configure sockets
 
 RUN pecl install channel://pecl.php.net/igbinary \
                  imagick \
@@ -79,10 +73,12 @@ RUN pecl install channel://pecl.php.net/igbinary \
 
 RUN docker-php-ext-enable igbinary imagick memcached msgpack redis
 
-RUN sed -i 's/# \(ru_RU.UTF-8 UTF-8\)/\1/g' /etc/locale.gen && locale-gen && update-locale "ru_RU.UTF-8"
-RUN export LC_CTYPE=en_US.UTF-8
-RUN export LC_ALL=en_US.UTF-8
-RUN locale-gen
+RUN sed -i 's/# \(ru_RU.UTF-8 UTF-8\)/\1/g' /etc/locale.gen && locale-gen && update-locale "ru_RU.UTF-8" && \
+    export LC_CTYPE=en_US.UTF-8 && \
+    export LC_ALL=en_US.UTF-8 && \
+    locale-gen
+
+RUN pecl install xdebug-2.9.8 && docker-php-ext-enable xdebug
 
 COPY ./docker/filebeat/filebeat.yml /etc/filebeat/
 RUN chmod go-w /etc/filebeat/filebeat.yml
@@ -91,9 +87,11 @@ COPY ./docker/scripts/install/app.sh /usr/bin/app
 RUN chmod +x /usr/bin/app
 
 # CREATE LOG DIR
-RUN mkdir -p /etc/supervisor
-RUN mkdir -p /var/log/php-fpm
-RUN mkdir -p /var/log/nginx
+RUN mkdir -p /etc/supervisor && \
+    mkdir -p /var/log/php-fpm && \
+    mkdir -p /var/log/nginx && \
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir -p /src
 
 # SETUP PERMAMENT VOLUMES
 VOLUME /var/log/rest
@@ -103,30 +101,21 @@ VOLUME /var/log/nginx
 
 # CONFIGURATION PHP
 COPY ./docker/php/fpm/ /usr/local/etc/php-fpm.d/
-RUN rm -rf /var/lib/docker/volumes/5bea178c5e78d6a69636442820f8eede2a433474a904dfabafec650056d8b502
-RUN rm -rf /var/lib/docker/volumes/d54e6f2202a378188c58122c7cbe3430deb58f7ab9d52a36411f6af70db98895
-RUN rm -rf /var/lib/docker/volumes/f39062c6fdeb900886a9d3427fbcad2d28fd3ef4ede2a293c770f16017599c50
-
-RUN rm -rf /src
-RUN mkdir -p /src
+COPY ./src/composer.json $APP_PATH
+COPY ./src /src
 
 # INSTALL TOOLS
-RUN curl -L https://getcomposer.org/installer >> composer-setup.php
-RUN php composer-setup.php
-RUN mv composer.phar /usr/local/bin/composer
-RUN composer config -g github-oauth.github.com 2c2d128d2ef8204efa6513dc48319a4e24289dc9
-
-COPY ./src/composer.json $APP_PATH
-
-RUN pecl install xdebug-2.9.8 && docker-php-ext-enable xdebug
-
-COPY ./src /src
+RUN curl -L https://getcomposer.org/installer >> composer-setup.php && \
+      php composer-setup.php && \
+      mv composer.phar /usr/local/bin/composer && \
+      composer config -g github-oauth.github.com 2c2d128d2ef8204efa6513dc48319a4e24289dc9
 
 WORKDIR /src
 
-RUN chmod -R 0777 /src/frontend/web/assets
-RUN chmod -R 0777 /src/backend/web/assets
-RUN service filebeat restart
+RUN chmod -R 0777 /src/frontend/web/assets && \
+    chmod -R 0777 /src/backend/web/assets && \
+    service filebeat restart
+
 #RUN useradd -ms /bin/bash yii_docker
 #USER yii_docker
 

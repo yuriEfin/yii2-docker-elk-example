@@ -1,0 +1,8 @@
+/src/frontend/web/assets/*
+/src/backend/web/assets/*
+/src/docker/rabbitmq/data/*
+/src/docker/rabbitmq/log/*
+/.git
+/.idea
+/vendor
+/Dockerfile

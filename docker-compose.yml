@@ -3,9 +3,8 @@ version: '3.5'
 services:
   web:
     build: ./docker/frontend
-    image: 'nginx:latest'
     hostname: frontend
-    container_name: 'yii_web'
+    container_name: 'yii_web2'
     ports:
       - 8002:80
       - 8001:80
@@ -40,7 +39,7 @@ services:
       - COMPOSER=/src/composer.json
       - COMPOSER_VENDOR_DIR=/src/vendor
       - PHP_ENABLE_XDEBUG=1
-      - XDEBUG_CONFIG="serverName=backend.work remote_enable=1 remote_mode=req remote_port=9000 remote_host=172.19.0.1 idekey=PHPSTORM"
+      - XDEBUG_CONFIG="serverName=backend.work remote_enable=1 remote_mode=req remote_port=9000 remote_host=172.18.0.1 idekey=PHPSTORM"
     links:
       - mysql_percona
       - redis
@@ -56,6 +55,8 @@ services:
     image: percona
     container_name: 'yii_mysql'
     restart: always
+    ports:
+      - '3308:3306'
     environment:
       MYSQL_USER: percona
       MYSQL_PASSWORD: qwqwqw
@@ -102,6 +103,17 @@ services:
     depends_on:
       - elasticsearch
 
+  rabbitmq:
+    build: ./docker/rabbitmq
+    hostname: rabbitmq
+    container_name: 'rabbitmq'
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ./docker/rabbitmq/data/:/var/lib/rabbitmq/
+      - ./docker/rabbitmq/log/:/var/log/rabbitmq
+
 volumes:
   data01:
     driver: local
@@ -114,7 +126,4 @@ volumes:
 
 networks:
   default:
-    driver: bridge
-
-  elastic:
     driver: bridge
