@@ -1,4 +1,4 @@
-# yii2-docker example
+# yii2-advanced-docker example
 
 - ELK (filebeat for log webservers and log application)
 - web (frontend|backend host)
