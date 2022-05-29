@@ -5,11 +5,11 @@ services:
     build: ./docker/frontend
     hostname: frontend
     container_name: 'yii_web2'
+    env_file:
+      - ./.env
     ports:
       - 8002:80
       - 8001:80
-    env_file:
-      - .env
     environment:
       - APP_PATH=${APP_PATH}
       - NGINX_HOST_FRONTEND=${NGINX_HOST_FRONTEND}
@@ -31,8 +31,6 @@ services:
       - ~/.composer-docker/cache:/root/.composer/cache:delegated
       - ./src:/src:delegated
       - ./src/vendor:/src/vendor
-    env_file:
-      - ./.env
     environment:
       - app_path=/src
       - APP_PATH=/src
@@ -40,10 +38,16 @@ services:
       - COMPOSER_VENDOR_DIR=/src/vendor
       - PHP_ENABLE_XDEBUG=1
       - XDEBUG_CONFIG="serverName=backend.work remote_enable=1 remote_mode=req remote_port=9000 remote_host=172.18.0.1 idekey=PHPSTORM"
+      - RABBIT_MQ_HOST=${RABBIT_MQ_HOST}
+      - RABBIT_MQ_PORT=${RABBIT_MQ_PORT}
+      - RABBIT_MQ_USER=${RABBIT_MQ_USER}
+      - RABBIT_MQ_PASSWORD=${RABBIT_MQ_PASSWORD}
     links:
       - mysql_percona
       - redis
       - elasticsearch
+      - rabbitmq
+      - memcached
 
   memcached:
     container_name: memcached

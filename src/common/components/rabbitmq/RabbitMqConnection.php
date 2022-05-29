@@ -2,50 +2,74 @@
 
 namespace common\components\rabbitmq;
 
-use common\components\interfaces\RabbitMqConnectionInterface;
 use common\components\rabbitmq\dto\ConnectionDto;
 use common\components\rabbitmq\exceptions\InvalidConfigurationConnectionException;
+use common\components\rabbitmq\interfaces\RabbitMqConnectionInterface;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 
 class RabbitMqConnection implements RabbitMqConnectionInterface
 {
-    private ?ConnectionDto $params = null;
+    private ?ConnectionDto $config = null;
+    private ?AMQPStreamConnection $connection = null;
     
     /**
-     * @param null   $host
-     * @param null   $port
-     * @param null   $user
-     * @param null   $password
-     * @param string $vhost
+     * Create new connection
+     *
+     * @var bool
+     */
+    private bool $isForceConnect = false;
+    
+    /**
+     * @param ConnectionDto|null $config
      *
      * @return AMQPStreamConnection|null
+     * @throws InvalidConfigurationConnectionException
      */
-    public function create(?string $host = null, ?int $port = null, ?string $user = null, ?string $password = null, string $vhost = '/'): ?AMQPStreamConnection
+    public function create(?ConnectionDto $config = null): ?AMQPStreamConnection
     {
-        $this->createParams(func_get_args());
+        $this->config = $config;
+        if (!$this->assertConfig()) {
+            $this->createConfigWithEnv();
+        }
         
-        return new AMQPStreamConnection($this->params->host, $this->params->port, $this->params->user, $this->params->password, $this->params->vhost);
+        $this->assertConfig(true);
+        
+        if (!$this->connection || $this->isForceConnect) {
+            $this->connection = new AMQPStreamConnection($this->config->host, $this->config->port, $this->config->user, $this->config->password, $this->config->vhost);
+        }
+        
+        return $this->connection;
     }
     
-    private function createParams(array $config = []): void
+    /**
+     * @param array $config
+     *
+     * @return void
+     */
+    private function createConfigWithEnv(): void
     {
-        if ($config) {
-            $this->params = new ConnectionDto($config);
-        } else {
-            $this->params = new ConnectionDto(
-                [
-                    // @todo: add to ENV vars PREFIX by host
-                    'host'     => getenv('RABBIT_MQ_HOST'), // '0.0.0.0'
-                    'port'     => getenv('RABBIT_MQ_PORT'), // '5672'
-                    'user'     => getenv('RABBIT_MQ_USER'),
-                    'password' => getenv('RABBIT_MQ_PASSWORD'),
-                    'vhost'    => '/',
-                ]
-            );
-        }
-        
-        if (!$this->params->host || !$this->params->port || !$this->params->user || !$this->params->password) {
+        $this->config = new ConnectionDto(
+            [
+                // @todo: add to ENV vars PREFIX by host
+                'host'     => getenv('RABBIT_MQ_HOST'), // '0.0.0.0'
+                'port'     => getenv('RABBIT_MQ_PORT'), // '5672'
+                'user'     => getenv('RABBIT_MQ_USER'),
+                'password' => getenv('RABBIT_MQ_PASSWORD'),
+                'vhost'    => '/',
+            ]
+        );
+    }
+    
+    private function assertConfig(bool $isThrow = false): bool
+    {
+        if (!$this->config->host || !$this->config->port || !$this->config->user || !$this->config->password) {
+            if (!$isThrow) {
+                return false;
+            }
+            
             throw new InvalidConfigurationConnectionException('Invalid configuration: rabbitmq connection data');
         }
+        
+        return true;
     }
 }

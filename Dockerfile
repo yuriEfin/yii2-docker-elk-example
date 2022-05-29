@@ -104,11 +104,16 @@ COPY ./docker/php/fpm/ /usr/local/etc/php-fpm.d/
 COPY ./src/composer.json $APP_PATH
 COPY ./src /src
 
+
+RUN echo ">>> Start supervisor service"  \
+COPY ./docker/supervisor/rabbitmq_cosume.conf /etc/supervisor/conf.d/
+RUN /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
+
 # INSTALL TOOLS
 RUN curl -L https://getcomposer.org/installer >> composer-setup.php && \
       php composer-setup.php && \
       mv composer.phar /usr/local/bin/composer && \
-      composer config -g github-oauth.github.com 2c2d128d2ef8204efa6513dc48319a4e24289dc9
+      composer config -g github-oauth.github.com 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
 
 WORKDIR /src
 

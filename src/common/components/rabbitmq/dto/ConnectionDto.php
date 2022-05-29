@@ -6,9 +6,9 @@ use yii\base\BaseObject;
 
 class ConnectionDto extends BaseObject
 {
-    public $host = '0.0.0.0';
-    public $port = 5672;
-    public $user = 'guest';
-    public $password = 'guest';
+    public ?string $host = null;
+    public ?int $port = null;
+    public ?string $user = null;
+    public ?string $password = null;
     public $vhost = '/';
 }

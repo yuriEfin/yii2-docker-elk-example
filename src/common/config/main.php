@@ -1,35 +1,47 @@
 <?php
 
-use common\components\rabbitmq\consumer\YourConsumer;
+use common\components\rabbitmq\interfaces\RabbitMqClientInterface;
+use common\components\rabbitmq\interfaces\RabbitMqConnectionInterface;
+use common\components\rabbitmq\interfaces\RabbitMqManagerInterface;
+use common\components\rabbitmq\RabbitMqClient;
+use common\components\rabbitmq\RabbitMqConnection;
+use common\components\rabbitmq\RabbitMqManager;
+use common\components\rabbitmq\router\interfaces\RabbitMqRouterConfigAdapterInterface;
+use common\components\rabbitmq\router\interfaces\RabbitMqRouterInterface;
+use common\components\rabbitmq\router\RabbitMqRouter;
+use common\components\rabbitmq\router\RabbitMqRouterConfigAdapter;
 
 return [
     'aliases'    => [
         '@bower' => '@vendor/bower-asset',
         '@npm'   => '@vendor/npm-asset',
     ],
-    'container' => [
+    'container'  => [
         'definitions' => [
-            'rabbit_mq.consumer.default' => YourConsumer::class,
+            RabbitMqClientInterface::class              => RabbitMqClient::class,
+            RabbitMqManagerInterface::class             => RabbitMqManager::class,
+            RabbitMqRouterInterface::class              => RabbitMqRouter::class,
+            RabbitMqRouterConfigAdapterInterface::class => RabbitMqRouterConfigAdapter::class,
         ],
-        'singletons' => [
-        
+        'singletons'  => [
+            RabbitMqConnectionInterface::class => RabbitMqConnection::class,
         ],
     ],
     'vendorPath' => dirname(dirname(__DIR__)) . '/vendor',
     'components' => [
-        'cache' => [
+        'cache'         => [
             'class' => 'yii\caching\FileCache',
         ],
-        'logstash' => [
-            'class' => \mitrm\logstash\LogstashSend::class,
+        'logstash'      => [
+            'class'  => \mitrm\logstash\LogstashSend::class,
             'config' => [
-                'class' => \mitrm\logstash\transport\TcpTransport::class,
-                'socket' => 'tcp://logstash:8080'
+                'class'  => \mitrm\logstash\transport\TcpTransport::class,
+                'socket' => 'tcp://logstash:8080',
             ],
         ],
         'elasticsearch' => [
-            'class' => 'yii\elasticsearch\Connection',
-            'nodes' => [
+            'class'      => 'yii\elasticsearch\Connection',
+            'nodes'      => [
                 ['http_address' => 'http://elastic:9200'],
                 // configure more hosts if you have a cluster
             ],
