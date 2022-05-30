@@ -44,8 +44,9 @@ class ConsumerController extends Controller
             $this->processManager->add($process);
         }
         
-        $this->startAsyncWithOutput();
-        
+        $this->startAsync();
+        //$this->startAsyncWithOutput();
+
         return ExitCode::OK;
     }
     

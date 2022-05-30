@@ -18,8 +18,6 @@ services:
       - NGINX_PORT_FRONTEND=80
     volumes:
       - ./src:/src:cached
-    links:
-      - php
 
   php:
     build: .
@@ -42,12 +40,6 @@ services:
       - RABBIT_MQ_PORT=${RABBIT_MQ_PORT}
       - RABBIT_MQ_USER=${RABBIT_MQ_USER}
       - RABBIT_MQ_PASSWORD=${RABBIT_MQ_PASSWORD}
-    links:
-      - mysql_percona
-      - redis
-      - elasticsearch
-      - rabbitmq
-      - memcached
 
   memcached:
     container_name: memcached

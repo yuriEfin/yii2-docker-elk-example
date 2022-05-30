@@ -34,7 +34,7 @@ class RabbitMqManager implements RabbitMqManagerInterface
         $consumer = $this->resolveConsumer($data);
         
         $channel = $this->client->getChannel();
-        $channel->basic_qos(null, 20, null);
+        $channel->basic_qos(null, 3000, null);
         $channel->basic_consume($data->queue, uniqid('rabbitmq_'), false, false, false, false, function (AMQPMessage $msg) use ($consumer) {
             $consumer->execute($msg);
         });

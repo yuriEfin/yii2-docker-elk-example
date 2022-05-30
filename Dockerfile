@@ -4,6 +4,7 @@ FROM php:7.4-fpm
 RUN apt-get update && \
     apt-get install --fix-missing -y  \
                 memcached  \
+                htop \
                 zip \
                 unzip  \
                 build-essential  \
@@ -80,10 +81,15 @@ RUN sed -i 's/# \(ru_RU.UTF-8 UTF-8\)/\1/g' /etc/locale.gen && locale-gen && upd
 
 RUN pecl install xdebug-2.9.8 && docker-php-ext-enable xdebug
 
+# supervisor
+COPY ./docker/supervisor/rabbitmq_cosume.conf /etc/supervisor/conf.d/
+COPY ./docker/supervisor/filebeat.conf /etc/supervisor/conf.d/
+
+# filebeat  logs
 COPY ./docker/filebeat/filebeat.yml /etc/filebeat/
 RUN chmod go-w /etc/filebeat/filebeat.yml
 
-COPY ./docker/scripts/install/app.sh /usr/bin/app
+ADD ./docker/scripts/install/app.sh /usr/bin/app
 RUN chmod +x /usr/bin/app
 
 # CREATE LOG DIR
@@ -104,24 +110,21 @@ COPY ./docker/php/fpm/ /usr/local/etc/php-fpm.d/
 COPY ./src/composer.json $APP_PATH
 COPY ./src /src
 
-
-RUN echo ">>> Start supervisor service"  \
-COPY ./docker/supervisor/rabbitmq_cosume.conf /etc/supervisor/conf.d/
-RUN /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
-
 # INSTALL TOOLS
 RUN curl -L https://getcomposer.org/installer >> composer-setup.php && \
       php composer-setup.php && \
       mv composer.phar /usr/local/bin/composer && \
       composer config -g github-oauth.github.com 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
 
-WORKDIR /src
-
 RUN chmod -R 0777 /src/frontend/web/assets && \
-    chmod -R 0777 /src/backend/web/assets && \
-    service filebeat restart
+    chmod -R 0777 /src/backend/web/assets
+
+WORKDIR /src
 
 #RUN useradd -ms /bin/bash yii_docker
 #USER yii_docker
 
-CMD ["app"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+CMD ["systemctl enable filebeat"]
+CMD ["nginx", "-g", "daemon off;"]
+CMD ["php-fpm", "-g", "daemon off;"]

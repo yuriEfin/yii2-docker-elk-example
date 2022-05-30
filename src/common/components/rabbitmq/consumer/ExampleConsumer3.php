@@ -16,7 +16,8 @@ class ExampleConsumer3 implements ConsumerInterface
     {
         try {
             $data = $message->body;
-            
+    
+            echo "\n".$message->getRoutingKey() . "\n";
             echo "\n Success handle $data \n";
             
             $message->ack();
